@@ -1,9 +1,13 @@
 //auth route
 
 const express = require('express');
+const jwt = require('jsonwebtoken');
+const authorize = require('../middleware/auth')
 const bcrypt = require('bcrypt');
 const router = express.Router();
 const userSchema = require('../models/user');
+
+//signin
 
 router.post("/signin-user", (req, res, next) => {
     let getUser;
@@ -44,5 +48,38 @@ router.post("/signin-user", (req, res, next) => {
         })
     });
 });
+
+//signup
+
+router.post("/register", (req,res,next) => {
+    bcrypt.hash(req.body.password, 10).then((hash) => {
+        const user = new userSchema({ 
+            name: req.body.name, 
+            email: req.body.email,
+            password: hash
+        });
+        user.save().then((response) => {
+            res.status(201).json({
+                message: 'user created',
+                result: response
+            })
+            .catch(error => {
+                res.status(500).json({
+                    error,
+                });
+            });
+        });
+    });
+});
+
+router.route(
+    '/all-user').get(authorize, (req, res) => {
+        userSchema.find(error, response => {
+            if (error) {
+                return next(error)
+            }
+            res.status(200).json(response)
+        })
+    })
 
 module.exports = router
